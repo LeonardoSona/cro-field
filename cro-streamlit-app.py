@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 
 def load_sample_data():
+    # Dashboard data
     current_tasks = pd.DataFrame({
         'site': ['Boston Clinical Center', 'Chicago Research Lab'],
         'type': ['Site Inspection', 'Staff Training'],
@@ -26,20 +27,55 @@ def load_sample_data():
         'status': ['Completed', 'Completed'],
         'outcome': ['Passed', 'Issues Found']
     })
-    
-    return current_tasks, upcoming_tasks, past_tasks
 
-def main():
-    st.set_page_config(page_title="CRO Field Agent Dashboard", layout="wide")
+    # Task manager data
+    inspection_items = {
+        'Physical Site Inspections': [
+            'Temperature logs reviewed',
+            'Storage conditions verified',
+            'Equipment calibration checked',
+            'Emergency protocols posted'
+        ],
+        'Staff Training': [
+            'Protocol review completed',
+            'GCP training verified',
+            'Documentation procedures demonstrated',
+            'Q&A session completed'
+        ],
+        'Protocol Deviations': [
+            'Deviation type categorized',
+            'Root cause analysis',
+            'CAPA plan documented',
+            'Regulatory reporting needed'
+        ],
+        'Site Relationships': [
+            'Key staff contacts updated',
+            'Communication preferences noted',
+            'Upcoming milestones reviewed',
+            'Site feedback collected'
+        ],
+        'Trial Procedures': [
+            'Subject screening process',
+            'Sample collection observed',
+            'Data entry verified',
+            'Protocol compliance confirmed'
+        ],
+        'Staff Competency': [
+            'Role-specific assessments',
+            'Required certifications verified',
+            'Performance metrics reviewed',
+            'Training needs identified'
+        ]
+    }
     
-    # Header
+    return current_tasks, upcoming_tasks, past_tasks, inspection_items
+
+def show_dashboard():
     st.title("Field Agent Dashboard")
     st.write(f"Current Date: {datetime.now().strftime('%Y-%m-%d')}")
     
-    # Load data
-    current_tasks, upcoming_tasks, past_tasks = load_sample_data()
+    current_tasks, upcoming_tasks, past_tasks, _ = load_sample_data()
     
-    # Tab navigation
     tab1, tab2, tab3 = st.tabs(["Current Tasks", "Upcoming Tasks", "Past Tasks"])
     
     with tab1:
@@ -50,7 +86,6 @@ def main():
                 cols[0].metric("Due Date", task['due'])
                 cols[1].metric("Status", task['status'])
                 cols[2].metric("Priority", task['priority'])
-                
                 if st.checkbox("Mark as Complete", key=f"complete_{task['site']}"):
                     st.success("Task marked as complete!")
 
@@ -72,7 +107,41 @@ def main():
                 cols[1].metric("Status", task['status'])
                 cols[2].metric("Outcome", task['outcome'])
 
-    # Urgent Notifications
+def show_tasks():
+    st.title("Task Manager")
+    
+    _, _, _, inspection_items = load_sample_data()
+    
+    selected_category = st.selectbox(
+        "Select Task Category",
+        list(inspection_items.keys())
+    )
+    
+    st.subheader(selected_category)
+    
+    for item in inspection_items[selected_category]:
+        col1, col2, col3 = st.columns([3, 1, 1])
+        with col1:
+            done = st.checkbox(item, key=f"task_{item}")
+        with col2:
+            if st.button("📷 Photo", key=f"photo_{item}"):
+                st.info("Photo capture triggered")
+        with col3:
+            if st.button("📝 Note", key=f"note_{item}"):
+                st.text_input("Add note:", key=f"note_input_{item}")
+
+def main():
+    st.set_page_config(page_title="CRO Field Agent App", layout="wide")
+    
+    # Navigation
+    page = st.sidebar.radio("Navigation", ["Dashboard", "Tasks"])
+    
+    if page == "Dashboard":
+        show_dashboard()
+    else:
+        show_tasks()
+        
+    # Urgent Notifications always visible
     st.sidebar.title("Urgent Notifications")
     st.sidebar.error("Protocol deviation reported at Boston Clinical Center")
     st.sidebar.warning("Staff certification expires in 5 days at Chicago Research Lab")
